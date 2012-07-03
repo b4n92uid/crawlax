@@ -88,7 +88,7 @@ def parseSensibleInfo(firm):
             break
 
         else:
-            firm['other'] += info + ', '
+            firm['other'].append(info)
 
         connection.close()
 
@@ -123,7 +123,7 @@ def parsePage(html):
 
         infos['phone'] = ''
         infos['email'] = ''
-        infos['other'] = ''
+        infos['other'] = list()
 
         firms.append(infos)
 
@@ -144,7 +144,7 @@ def parsePage(html):
             firms(name, address, category, phone, email, website, other)
             VALUES(?, ?, ?, ?, ?, ?, ?)''',
                 (firm['name'], firm['address'], firm['category'],
-                firm['phone'], firm['email'], firm['website'], firm['other']))
+                firm['phone'], firm['email'], firm['website'], ', '.join(firm['other'])))
         except:
             print "Unexpected sql error:", sys.exc_info()[0]
             continue
