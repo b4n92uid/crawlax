@@ -32,9 +32,6 @@ def parsefirm(detail_html, category):
     phone = ''
     other = list()
 
-    if name in firmlist:
-        return
-
     print 'Parsing firm', name
 
     infos = html.cssselect('.style-content > p')
@@ -49,14 +46,14 @@ def parsefirm(detail_html, category):
         if key == 'Nom de l\'entreprise':
             name = value
 
-        elif key == 'Pay\xc3':
+        elif key == u'Pay\xc3':
             address += value
         elif key == 'Addresse':
             address += value
         elif key == 'wilaya':
             address += value
 
-        elif key == 'T\xe9l':
+        elif key == u'T\xe9l':
 
             imgelem = i.cssselect('img')
 
@@ -82,9 +79,6 @@ def parsefirm(detail_html, category):
 
     database.commit()
     cur.close()
-
-    firmlist.append(name)
-    firmlist.update()
 
 def main():
 
@@ -129,10 +123,17 @@ def main():
 
                 detail_url = firm.cssselect('.detailbutton')[0].get('href')
                 detail_html = browser.get(detail_url)
-                
-                parsefirm(detail_html, categoy_name)
-                
-                time.sleep(2)
+
+                try:
+                    if detail_url in firmlist:
+                        continue
+
+                    parsefirm(detail_html, categoy_name)
+                    firmlist.append(detail_html)
+                    firmlist.update()
+                    time.sleep(1)
+                except:
+                    pass
 
             print len(firmblocks), ' Frims has been parsed'
 
