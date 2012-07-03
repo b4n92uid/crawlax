@@ -62,8 +62,11 @@ def main():
 
         print '> Parsing wilaya', wilaya_name
 
-        wilaya_dom = lxml.html.parse(wilaya_link).getroot()
-        wilaya_dom.make_links_absolute(wilaya_link)
+        try:
+            wilaya_dom = lxml.html.parse(wilaya_link).getroot()
+            wilaya_dom.make_links_absolute(wilaya_link)
+        except:
+            continue
 
         for commune_a in wilaya_dom.cssselect('#list a') :
 
@@ -72,8 +75,11 @@ def main():
 
             print '> Parsing commune', commune_name
 
-            commune_dom = lxml.html.parse(commune_link).getroot()
-            commune_dom.make_links_absolute(commune_link)
+            try:
+                commune_dom = lxml.html.parse(commune_link).getroot()
+                commune_dom.make_links_absolute(commune_link)
+            except:
+                continue
 
             for firm in commune_dom.cssselect('#list a'):
 
@@ -85,6 +91,7 @@ def main():
                     if not firm_link in firmlist:
                         parsefirm(firm_link)
                         firmlist.append(firm_link)
+                        firmlist.update()
 
                 except:
                     pass
