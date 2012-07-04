@@ -3,6 +3,7 @@ import lxml.html
 import urlparse
 import sqlite3
 import urllib
+import sys
 import re
 
 baseurl = 'http://directory.kompass.com/';
@@ -19,13 +20,14 @@ CREATE TABLE IF NOT EXISTS firms(
 database.commit()
 cur.close()
 
-def parsefirm(firm_link):
+def parsefirm(firm_link, wilaya_name, commune_name):
 
     firm_dom = lxml.html.parse(firm_link).getroot()
 
     name = firm_dom.cssselect('.description_company .title_h2')[0].text_content().strip()
     address = firm_dom.cssselect('.color_gris')[0].text_content()
-    address = re.sub("\s{2,}", "", address).strip()
+    address = re.sub("\s{2,}", " ", address).strip()
+    address = unicode("{0}, {1} : {2}").format(wilaya_name, commune_name, address)
     phone = ''
     other = list()
 
@@ -41,7 +43,7 @@ def parsefirm(firm_link):
 
     cur = database.cursor()
     cur.execute('INSERT INTO firms VALUES(?, ?, ?, ?, ?, ?, ?)',
-    (name.encode('iso-8859-15'), address, '', phone, '', '', ', '.join(other)))
+    (name, address, '', phone, '', '', ', '.join(other)))
 
     database.commit()
     cur.close()
@@ -70,7 +72,7 @@ def main():
 
         for commune_a in wilaya_dom.cssselect('#list a') :
 
-            commune_name = commune_a.text_content()
+            commune_name = re.match('([^\[]+)',commune_a.text_content()).group(0)
             commune_link = commune_a.get('href')
 
             print '> Parsing commune', commune_name
@@ -83,16 +85,14 @@ def main():
 
             for firm in commune_dom.cssselect('#list a'):
 
-                print 'Parsing firm', firm.text_content()
-
                 try:
                     firm_link = firm.get('href')
 
                     if not firm_link in firmlist:
-                        parsefirm(firm_link)
+                        print 'Parsing firm', firm.text_content()
+                        parsefirm(firm_link, wilaya_name, commune_name)
                         firmlist.append(firm_link)
                         firmlist.update()
-
                 except:
                     pass
 
