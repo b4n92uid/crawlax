@@ -1,7 +1,8 @@
 
 import re
-import browser
 import time
+import random
+import browser
 import sqlite3
 import urlparse
 import lxml.html
@@ -28,9 +29,9 @@ def parsefirm(detail_html, category):
     html = lxml.html.document_fromstring(detail_html)
 
     name = html.cssselect('.name')[0].text_content()
-    address = ''
-    phone = ''
+    address = list()
     other = list()
+    phone = ''
 
     print 'Parsing firm', name
 
@@ -47,11 +48,11 @@ def parsefirm(detail_html, category):
             name = value
 
         elif key == u'Pay\xc3':
-            address += value
+            address.append(value)
         elif key == 'Addresse':
-            address += value
+            address.append(value)
         elif key == 'wilaya':
-            address += value
+            address.append(value)
 
         elif key == u'T\xe9l':
 
@@ -74,11 +75,18 @@ def parsefirm(detail_html, category):
 
     cur = database.cursor()
 
+    address = ', '.join(address)
+    other = ', '.join(other)
+
     cur.execute('INSERT INTO firms VALUES(?, ?, ?, ?, ?, ?, ?)',
-    (name, address, category, phone, '', '', ', '.join(other)))
+    (name, address, category, phone, '', '', other))
 
     database.commit()
     cur.close()
+
+def shuffle(list):
+    random.shuffle(list)
+    return list
 
 def main():
 
@@ -96,7 +104,7 @@ def main():
     dom = lxml.html.document_fromstring(html)
     dom.make_links_absolute(baseurl)
 
-    for catelem in dom.cssselect('.iconne') :
+    for catelem in  shuffle(dom.cssselect('.iconne')):
 
         elem_a = catelem.cssselect('a')[0]
 
@@ -117,13 +125,16 @@ def main():
             except:
                 break
 
-            firmblocks = catdom.cssselect('#result-block')
+            firmblocks = shuffle(catdom.cssselect('#result-block'))
 
             for firm in firmblocks :
 
                 detail_url = firm.cssselect('.detailbutton')[0].get('href')
                 detail_html = browser.get(detail_url)
-
+                
+                if 'images/stop.png' in detail_html :
+                    raise Exception('*** Access denied to the site ! ***')
+                
                 try:
                     if detail_url in firmlist:
                         continue
@@ -131,7 +142,7 @@ def main():
                     parsefirm(detail_html, categoy_name)
                     firmlist.append(detail_html)
                     firmlist.update()
-                    time.sleep(1)
+                    time.sleep(2)
                 except:
                     pass
 
@@ -145,4 +156,7 @@ def main():
             categoy_url = next_elem.get('href')
             curpage += 1
 
-main()
+try:
+    main()
+except Exception as e:
+    print e
