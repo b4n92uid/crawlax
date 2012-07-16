@@ -16,6 +16,7 @@ browser = browser.browser()
 cur = database.cursor()
 cur.execute('''
 CREATE TABLE IF NOT EXISTS firms(
+    id INTEGER NOT NULL PRIMARY KEY DEFAULT "0",
     name TEXT, address TEXT, category TEXT, phone TEXT, email TEXT, website TEXT, other TEXT
 )
 ''')
