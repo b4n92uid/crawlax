@@ -2,32 +2,64 @@
 import urllib
 import urllib2
 import cookielib
+import urlparse
+import logging
 
 headers = {
-    'User-Agent': 'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/536.5 (KHTML, like Gecko) Chrome/19.0.1084.56 Safari/536.5',
-    'Accept' : 'text/html, image/jpeg, image/png, text/*, image/*, */*',
-    'Accept-Language': 'fr-fr',
-    'Accept-Charset' : 'ISO-8859-1,utf-8;q=0.7,*;q=0.7',
-    'Keep-Alive': '300',
-    'Connection': 'keep-alive',
-    'Cache-Control': 'max-age=0',
+    'Connection' : 'keep-alive',
+    'Cache-Control' : 'max-age=0',
+    'Accept' : 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+    'User-Agent' : 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/33.0.1750.146 Safari/537.36',
+    'Accept-Language' : 'fr-FR,fr;q=0.8,en-US;q=0.6,en;q=0.4,ar;q=0.2',
 }
 
 class browser:
 
     def __init__(self):
-        cj = cookielib.CookieJar()
-        self.opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cj))
+        coukiejar = cookielib.CookieJar()
+        cookieHandler = urllib2.HTTPCookieProcessor(coukiejar)
+
+        self.opener = urllib2.build_opener(cookieHandler)
 
     def _request(self, url):
         request = urllib2.Request(url, None, headers)
         return request
 
     def post(self, url, data):
-        data = urllib.urlencode(data)
-        resp = self.opener.open(self._request(url), data)
+
+        urlcom = urlparse.urlparse(url)
+        logging.info('POST %s?%s', urlcom.path, urlcom.query)
+
+        resp = None
+
+        try:
+            data = urllib.urlencode(data)
+            req = self._request(url)
+            resp = self.opener.open(req, data)
+
+        except urllib2.URLError as e:
+            logging.error("Request error : %s", e.reason)
+
+        except urllib2.HTTPError as e:
+            logging.error("Server error %d %s", e.code, e.reason)
+
         return resp.read()
 
     def get(self, url):
-        resp = self.opener.open(self._request(url))
+
+        urlcom = urlparse.urlparse(url)
+        logging.info('GET %s?%s', urlcom.path, urlcom.query)
+
+        resp = None
+
+        try:
+            req = self._request(url)
+            resp = self.opener.open(req)
+
+        except urllib2.URLError as e:
+            logging.error("Request error %s", e.reason)
+
+        except urllib2.HTTPError as e:
+            logging.error("Server error %d %s", e.code, e.reason)
+
         return resp.read()
